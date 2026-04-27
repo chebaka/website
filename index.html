@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오키나와 7박 8일 가족 여행 지도</title>
+    
+    <!-- Tailwind CSS for UI styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Pretendard', sans-serif; }
+        #map { width: 100%; height: 100vh; z-index: 1; }
+        
+        /* Custom Marker Styles */
+        .custom-marker {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: transform 0.2s;
+        }
+        .custom-marker:hover { transform: scale(1.1); z-index: 1000 !important; }
+        
+        .marker-red { background-color: #ef4444; }
+        .marker-green { background-color: #22c55e; }
+        .marker-blue { background-color: #3b82f6; }
+        .marker-gray { background-color: #6b7280; }
+        .marker-orange { background-color: #f59e0b; }
+        .marker-purple { background-color: #a855f7; }
+        
+        /* Small Marker for Restaurants */
+        .custom-marker-sm {
+            width: 30px;
+            height: 30px;
+            font-size: 14px;
+            border-width: 2px;
+        }
+
+        /* Popup Styles */
+        .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; }
+        .leaflet-popup-content { margin: 0; line-height: 1.5; }
+        .pointer-events-auto { pointer-events: auto; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Tab Active States */
+        .tab-active { border-bottom-width: 2px; border-color: #3b82f6; color: #2563eb; }
+        .tab-inactive { border-bottom-width: 2px; border-color: transparent; color: #9ca3af; }
+    </style>
+</head>
+<body class="relative">
+
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Interactive Panel (Left) -->
+    <div id="ui-restaurant-list" class="absolute top-4 left-4 z-[1000] flex flex-col pointer-events-auto bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 w-[calc(100%-2rem)] max-w-xs sm:max-w-sm transition-all duration-300">
+        <!-- Header -->
+        <div id="panel-header" class="p-3 sm:p-4 bg-white rounded-t-2xl cursor-pointer flex justify-between items-center hover:bg-gray-50 border-b border-gray-200 shrink-0 select-none transition-colors">
+            <div>
+                <h2 class="text-sm sm:text-base font-bold text-gray-800 flex items-center gap-2">🔍 맞춤 장소 탐색기</h2>
+                <p class="text-[10px] text-gray-500 mt-0.5">클릭하여 접기/펼치기</p>
+            </div>
+            <svg id="panel-chevron" class="w-5 h-5 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+        </div>
+        
+        <!-- Content -->
+        <div id="panel-content" class="flex flex-col bg-white rounded-b-2xl overflow-hidden">
+            <!-- Tabs -->
+            <div class="flex border-b border-gray-200 bg-gray-50">
+                <button id="tab-tour" class="flex-1 py-2.5 text-sm font-bold tab-active transition-colors">🎈 영유아 관광 (15)</button>
+                <button id="tab-rest" class="flex-1 py-2.5 text-sm font-bold tab-inactive hover:bg-gray-100 transition-colors">🍽️ 추천 식당 (30)</button>
+            </div>
+            
+            <!-- List Container -->
+            <div id="list-container" class="overflow-y-auto p-2 space-y-1 max-h-[35vh] sm:max-h-[65vh] bg-gray-50/50">
+                <!-- JS will inject list items here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- UI Overlay Legend (Right) -->
+    <div id="ui-overlay" class="absolute top-4 right-4 z-[1000] flex flex-col gap-4 w-[calc(100%-2rem)] max-w-[200px] sm:max-w-[240px] pointer-events-none">
+        <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 pointer-events-auto overflow-hidden">
+            <div id="legend-header" class="p-3 sm:p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 select-none bg-white rounded-2xl transition-colors">
+                <div>
+                    <h1 class="text-sm sm:text-base font-bold text-gray-800">📍 거점 지도</h1>
+                    <p class="text-[10px] text-gray-500 mt-0.5">클릭하여 열기</p>
+                </div>
+                <svg id="legend-chevron" class="w-5 h-5 text-gray-500 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+            </div>
+            <div id="legend-content" class="px-4 pb-4 hidden bg-white">
+                <div class="space-y-2 pt-2 border-t border-gray-100">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-green-500 border-2 border-white shadow flex items-center justify-center text-white text-[10px]">🏨</div>
+                        <div class="text-xs text-gray-700"><strong>하얏트 세라가키</strong><br><span class="text-[10px] text-gray-500">Day 1~3 숙소</span></div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-blue-500 border-2 border-white shadow flex items-center justify-center text-white text-[10px]">🏝️</div>
+                        <div class="text-xs text-gray-700"><strong>호시노야 오키나와</strong><br><span class="text-[10px] text-gray-500">Day 3~8 숙소</span></div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-2 border-t border-gray-100 pt-3">
+                        <div class="w-5 h-5 rounded-full bg-purple-500 border border-white shadow flex items-center justify-center text-white text-[10px]">🎈</div>
+                        <div class="text-xs text-gray-700"><strong>영유아 관광지</strong><br><span class="text-[10px] text-gray-500">유모차/카트/보트 가능</span></div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-2 border-t border-gray-100 pt-3">
+                        <div class="w-6 h-0 border-t-[3px] border-dashed border-indigo-500"></div>
+                        <div class="text-xs text-gray-700"><strong>주요 이동 동선</strong><br><span class="text-[10px] text-gray-500">공항→숙소1→숙소2→관광</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Initialize Map with Strict Bounds to prevent World Map view
+        const boundsOkinawa = [
+            [25.8, 127.0], // South West
+            [27.0, 128.5]  // North East
+        ];
+
+        const map = L.map('map', { 
+            zoomControl: false,
+            minZoom: 9, // 세계지도로 축소되는 것 방지
+            maxBounds: boundsOkinawa, // 오키나와 밖으로 드래그 방지
+            maxBoundsViscosity: 1.0
+        }).setView([26.4500, 127.8000], 10);
+        
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            maxZoom: 19
+        }).addTo(map);
+
+        // 2. Main Bases
+        const bases = [
+            { name: '하얏트 리젠시 세라가키', lat: 26.5065, lng: 127.8765, color: 'marker-green', icon: '🏨', type: '숙소', desc: '첫 번째 거점 (2박). 실내외 수영장 및 키즈클럽.' },
+            { name: '호시노야 오키나와', lat: 26.4026, lng: 127.7148, color: 'marker-blue', icon: '🏝️', type: '숙소', desc: '두 번째 거점 (5박). 요미탄 해변 휴식 중심 베이스캠프.' },
+            { name: '나하 국제공항', lat: 26.2045, lng: 127.6411, color: 'marker-gray', icon: '✈️', type: '공항', desc: '도착(16:00) 렌터카 픽업 / 마지막 날 렌터카 반납.' }
+        ];
+
+        // 3. Attractions (15 places)
+        const attractions = [
+            { name: '만좌모', lat: 26.5049, lng: 127.8502, color: 'marker-purple', icon: '🌅', price: '¥100', kids: '유모차 평지 산책', time: '30분', desc: '하얏트 숙소에서 가깝고 길이 평탄해 유모차 밀기에 최적화되어 있습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=万座毛' },
+            { name: '부세나 해중공원 (글라스보트)', lat: 26.5385, lng: 127.9400, color: 'marker-purple', icon: '🐠', price: '¥1,560', kids: '무료 셔틀/배 탑승', time: '1시간', desc: '옷을 적시지 않고 바닷속 열대어를 볼 수 있는 고래 모양 보트. 선착장까지 셔틀로 이동합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ブセナ海中公園' },
+            { name: '비오스의 언덕', lat: 26.4180, lng: 127.8000, color: 'marker-purple', icon: '🚤', price: '¥1,800', kids: '정글 크루즈 보트', time: '2시간', desc: '안전한 크루즈 보트를 타고 식물과 동물을 구경합니다. 걷기 힘든 0~3세 아이들에게 최적입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ビオスの丘' },
+            { name: '자키미성 유적', lat: 26.4080, lng: 127.7423, color: 'marker-purple', icon: '🏯', price: '무료', kids: '완만한 잔디밭', time: '40분', desc: '경사가 완만하고 잔디밭이 넓어 숙소 이동일 점심 식사 후 가볍게 걷기 좋은 코스입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=座喜味城跡' },
+            { name: '잔파곶', lat: 26.4385, lng: 127.7145, color: 'marker-purple', icon: '🌊', price: '무료', kids: '넓고 평탄한 공원', time: '30분', desc: '탁 트인 바다와 새하얀 등대가 멋진 곳. 길쭉하고 평탄한 산책로가 있어 유모차 끌기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=残波岬' },
+            { name: '나고 파인애플 파크', lat: 26.6166, lng: 127.9946, color: 'marker-purple', icon: '🍍', price: '¥1,200', kids: '자동 카트 탑승', time: '1.5시간', desc: '츄라우미 가는 길에 위치. 자동으로 움직이는 귀여운 파인애플 카트를 타고 편하게 구경합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ナゴパイナップルパーク' },
+            { name: '오키나와 츄라우미 수족관', lat: 26.6943, lng: 127.8779, color: 'marker-purple', icon: '🐬', price: '¥2,180', kids: '무료 돌고래쇼', time: '3~4시간', desc: '동선이 넓어 유모차가 필수이며, 야외에서 진행되는 오키짱(돌고래) 극장이 영유아에게 인기입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=沖縄美ら海水族館' },
+            { name: '네오파크 오키나와', lat: 26.6001, lng: 127.9890, color: 'marker-purple', icon: '🚂', price: '¥1,300', kids: '기차(경전철) 탑승', time: '2시간', desc: '열대 동식물을 볼 수 있는 곳. 기차를 타고 공원을 한 바퀴 편하게 돌 수 있어 걷기 싫어하는 아이들에게 최고입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ネオパークオキナワ' },
+            { name: '코우리 오션 타워', lat: 26.7028, lng: 128.0247, color: 'marker-purple', icon: '🛺', price: '¥1,000', kids: '자동 운전 카트', time: '1.5시간', desc: '코우리 대교를 건너 도착하는 전망대. 주차장에서 입구까지 자동 카트를 타고 올라가며, 에어컨이 나와 매우 쾌적합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=古宇利オーシャンタワー' },
+            { name: '갈라 아오이 우미', lat: 26.4085, lng: 127.7150, color: 'marker-purple', icon: '🧂', price: '무료입장', kids: '소금 아이스크림', time: '1시간', desc: '호시노야 오키나와 근처. 바다를 보며 아이스크림을 먹고, 소금 공장을 볼 수 있는 유모차 친화적 평지 시설입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=Gala青い海' },
+            { name: '아메리칸 빌리지', lat: 26.3163, lng: 127.7578, color: 'marker-purple', icon: '🎡', price: '무료', kids: '완벽한 평지/포장길', time: '2시간', desc: '요미탄에서 남쪽으로 차로 20분. 길 전체가 평탄하게 포장되어 유모차 끌기 좋고 색감이 화려해 사진이 잘 나옵니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=アメリカンビレッジ' },
+            { name: '류큐무라', lat: 26.4332, lng: 127.7735, color: 'marker-purple', icon: '🏮', price: '¥1,500', kids: '전통 마을/지붕 쉼터', time: '1.5시간', desc: '오키나와 전통 가옥 테마파크. 지붕이 있는 쉼터 공간이 많아 덥거나 비가 올 때 아이들과 피신하기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=琉球村' },
+            { name: '부세나 해중전망탑', lat: 26.5385, lng: 127.9405, color: 'marker-purple', icon: '🔭', price: '¥1,050', kids: '안고 내려가기(계단)', time: '40분', desc: '수심 5m 아래로 계단을 내려가 실제 바닷속을 창문으로 봅니다. 유모차는 불가하지만 아기 띠로 안고 갈만합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ブセナ海中展望塔' },
+            { name: '오키나와 후르츠 랜드', lat: 26.6160, lng: 127.9940, color: 'marker-purple', icon: '🥭', price: '¥1,200', kids: '전 구역 실내/유모차', time: '1.5시간', desc: '파인애플 파크 바로 옆. 퀴즈를 풀며 새와 과일을 봅니다. 전체가 지붕으로 덮여있어 날씨 영향 없이 유모차 관람이 가능합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=沖縄フルーツらんど' },
+            { name: '도구치 비치 공원', lat: 26.3653, lng: 127.7405, color: 'marker-purple', icon: '🏴‍☠️', price: '무료', kids: '해적선 대형 놀이터', time: '1시간', desc: '요미탄 남쪽의 평화로운 해변. 바다 바로 옆에 거대한 배 모양의 놀이터가 있어 3세 아이가 뛰놀기 가장 완벽합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=渡具知ビーチ' }
+        ];
+
+        // 4. Restaurants (30 places)
+        const restaurants = [
+            { name: '카후쿠 (아구 샤브샤브)', lat: 26.5015, lng: 127.8735, color: 'marker-orange', icon: '🍲', price: '¥3,000~5,000', kids: '유아 의자/기저귀대 O', rsv: '예약 필수', meal: '저녁 (온나)', gmaps: 'https://www.google.com/maps/search/?api=1&query=かふく+恩納村' },
+            { name: '시마부타야 온나', lat: 26.4950, lng: 127.8550, color: 'marker-orange', icon: '🥓', price: '¥2,000~4,000', kids: '다다미/유아 식기 O', rsv: '예약 권장', meal: '저녁 (온나)', gmaps: 'https://www.google.com/maps/search/?api=1&query=島豚や+恩納店' },
+            { name: 'PST OKINAWA', lat: 26.4850, lng: 127.8450, color: 'marker-orange', icon: '🍕', price: '¥2,000~4,000', kids: '유아 의자 O', rsv: '예약 권장', meal: '점심/저녁 (온나)', gmaps: 'https://www.google.com/maps/search/?api=1&query=PST+OKINAWA+by+the+sea' },
+            { name: '808 포케보울스', lat: 26.5000, lng: 127.8650, color: 'marker-orange', icon: '🥗', price: '¥1,000~2,000', kids: '포장 용이/식기 O', rsv: '불필요', meal: '점심/간식 (온나)', gmaps: 'https://www.google.com/maps/search/?api=1&query=808+Poke+Bowls+Okinawa' },
+            { name: '나카무라 소바', lat: 26.5120, lng: 127.8850, color: 'marker-orange', icon: '🍜', price: '¥1,000~2,000', kids: '다다미석 O', rsv: '불가 (대기)', meal: '점심 (온나)', gmaps: 'https://www.google.com/maps/search/?api=1&query=なかむらそば+恩納村' },
+            { name: 'OLU Grill', lat: 26.4010, lng: 127.7155, color: 'marker-orange', icon: '🥩', price: '¥3,000~5,000', kids: '리조트 내 완비', rsv: '예약 필수', meal: '저녁 (요미탄)', gmaps: 'https://www.google.com/maps/search/?api=1&query=OLU+Grill+Okinawa' },
+            { name: '반타 카페', lat: 26.4035, lng: 127.7130, color: 'marker-orange', icon: '☕', price: '¥1,000~2,000', kids: '넓은 좌석/유모차 O', rsv: '불필요', meal: '아침/간식 (요미탄)', gmaps: 'https://www.google.com/maps/search/?api=1&query=星野リゾート+バンタカフェ' },
+            { name: '하나우이 소바', lat: 26.3920, lng: 127.7380, color: 'marker-orange', icon: '🍜', price: '¥1,000~2,000', kids: '다다미방/식기 O', rsv: '불필요', meal: '점심/저녁 (요미탄)', gmaps: 'https://www.google.com/maps/search/?api=1&query=花織そば' },
+            { name: '우민추 식당', lat: 26.3750, lng: 127.7240, color: 'marker-orange', icon: '🍤', price: '¥1,000~2,000', kids: '야외 테라스석 O', rsv: '불필요', meal: '점심 (요미탄)', gmaps: 'https://www.google.com/maps/search/?api=1&query=海人食堂+読谷' },
+            { name: 'Mom\'s Chicken Yomitan', lat: 26.3980, lng: 127.7300, color: 'marker-orange', icon: '🍗', price: '¥1,000~2,000', kids: '포장 최적화', rsv: '불필요', meal: '야식/포장 (요미탄)', gmaps: 'https://www.google.com/maps/search/?api=1&query=Mom%27s+Chicken+Yomitan' },
+            { name: 'CORNER\'z', lat: 26.3850, lng: 127.7280, color: 'marker-orange', icon: '🍔', price: '¥1,000~2,000', kids: '소파/아기 의자 O', rsv: '불필요', meal: '점심 (요미탄)', gmaps: 'https://www.google.com/maps/search/?api=1&query=CORNER%27z+Yomitan' },
+            { name: '미토라보 (야키니쿠)', lat: 26.3720, lng: 127.7420, color: 'marker-orange', icon: '🍖', price: '¥2,000~4,000', kids: '유아 의자/넓은 간격', rsv: '예약 권장', meal: '저녁 (요미탄)', gmaps: 'https://www.google.com/maps/search/?api=1&query=ミトラボ+読谷' },
+            { name: 'Restaurant Palm Beach', lat: 26.4150, lng: 127.7160, color: 'marker-orange', icon: '🍝', price: '¥1,000~3,000', kids: '테라스/유모차 반입 O', rsv: '예약 권장', meal: '점심/저녁 (요미탄)', gmaps: 'https://www.google.com/maps/search/?api=1&query=Restaurant+Palm+Beach+Okinawa' },
+            { name: '카이호우마루', lat: 26.6850, lng: 127.8785, color: 'marker-orange', icon: '🍱', price: '¥1,000~3,000', kids: '다다미/기저귀대 O', rsv: '불필요 (대기)', meal: '점심 (모토부)', gmaps: 'https://www.google.com/maps/search/?api=1&query=海邦丸+本部' },
+            { name: '츄라우미 키친 파파이야', lat: 26.6910, lng: 127.8810, color: 'marker-orange', icon: '🍛', price: '¥1,000~2,000', kids: '유아 의자/메뉴 O', rsv: '불필요', meal: '점심 (모토부)', gmaps: 'https://www.google.com/maps/search/?api=1&query=チャラウミキッチン+パパイヤ' },
+            { name: '류큐노우시 (야키니쿠)', lat: 26.4468, lng: 127.8015, color: 'marker-orange', icon: '🥩', price: '¥5,000~', kids: '완벽한 개별 룸 O', rsv: '예약 필수', meal: '저녁 (온나)', gmaps: 'https://www.google.com/maps/search/?api=1&query=琉球の牛+恩納本館' },
+            { name: '키지무나 (타코라이스)', lat: 26.5050, lng: 127.8750, color: 'marker-orange', icon: '🍛', price: '¥1,000~2,000', kids: '아기의자/키즈메뉴 O', rsv: '불필요', meal: '점심 (세라가키)', gmaps: 'https://www.google.com/maps/search/?api=1&query=きじむなぁ+瀬良垣' },
+            { name: '씨사이드 드라이브인', lat: 26.4380, lng: 127.7950, color: 'marker-orange', icon: '🥪', price: '~¥1,000', kids: '차 안에서 식사 가능', rsv: '불필요', meal: '아침/야식 (온나)', gmaps: 'https://www.google.com/maps/search/?api=1&query=シーサイドドライブイン' },
+            { name: '하와이안 팬케이크 파일라니', lat: 26.5020, lng: 127.8600, color: 'marker-orange', icon: '🥞', price: '¥1,000~2,000', kids: '아기의자/소파 O', rsv: '권장', meal: '아침/간식 (온나)', gmaps: 'https://www.google.com/maps/search/?api=1&query=ハワイアンパンケーキハウス+パニラニ' },
+            { name: '피자 인 더 스카이 카진호', lat: 26.6433, lng: 127.8926, color: 'marker-orange', icon: '🍕', price: '¥1,000~3,000', kids: '마루형 좌식/야외 정원', rsv: '불가 (대기)', meal: '점심 (모토부)', gmaps: 'https://www.google.com/maps/search/?api=1&query=花人逢' },
+            { name: '키시모토 식당', lat: 26.6625, lng: 127.8970, color: 'marker-orange', icon: '🍜', price: '~¥1,000', kids: '전통 다다미석 O', rsv: '불가 (대기)', meal: '점심 (모토부)', gmaps: 'https://www.google.com/maps/search/?api=1&query=きしもと食堂' },
+            { name: '모토부 목장 (야키니쿠)', lat: 26.6575, lng: 127.8950, color: 'marker-orange', icon: '🥩', price: '¥3,000~6,000', kids: '유아식기/넓은 테이블', rsv: '권장', meal: '점심/저녁 (모토부)', gmaps: 'https://www.google.com/maps/search/?api=1&query=もとぶ牧場+本部店' },
+            { name: '코우리 쉬림프', lat: 26.7005, lng: 128.0225, color: 'marker-orange', icon: '🦐', price: '¥1,500~2,000', kids: '차 안 식사/야외 테라스', rsv: '불필요', meal: '점심 (코우리섬)', gmaps: 'https://www.google.com/maps/search/?api=1&query=KOURI+SHRIMP' },
+            { name: '민타마 (이탈리안)', lat: 26.3985, lng: 127.7285, color: 'marker-orange', icon: '🍝', price: '¥2,000~4,000', kids: '다다미/유아식기 O', rsv: '예약 필수', meal: '저녁 (요미탄)', gmaps: 'https://www.google.com/maps/search/?api=1&query=ミンタマ' },
+            { name: '블루씰 아이스크림', lat: 26.3880, lng: 127.7400, color: 'marker-orange', icon: '🍦', price: '~¥1,000', kids: '소파석/아이들 최애', rsv: '불필요', meal: '간식 (요미탄)', gmaps: 'https://www.google.com/maps/search/?api=1&query=ブルーシール+読谷' },
+            { name: '카이센테이 (해산물)', lat: 26.3760, lng: 127.7250, color: 'marker-orange', icon: '🍣', price: '¥2,000~4,000', kids: '넓은 다다미방 O', rsv: '권장', meal: '점심/저녁 (요미탄)', gmaps: 'https://www.google.com/maps/search/?api=1&query=海鮮亭+読谷' },
+            { name: '수이엔 (빵집)', lat: 26.4155, lng: 127.7225, color: 'marker-orange', icon: '🥐', price: '~¥1,000', kids: '야외 마당 산책 O', rsv: '불필요', meal: '아침/간식 (요미탄)', gmaps: 'https://www.google.com/maps/search/?api=1&query=水円+読谷' },
+            { name: '피제리아 다 엔조', lat: 26.4420, lng: 127.7710, color: 'marker-orange', icon: '🍕', price: '¥2,000~4,000', kids: '유아의자/넓은 테라스', rsv: '권장', meal: '점심/저녁 (온나/마에다)', gmaps: 'https://www.google.com/maps/search/?api=1&query=Pizzeria+da+ENZO' },
+            { name: '요미탄 어민식당', lat: 26.3775, lng: 127.7290, color: 'marker-orange', icon: '🐟', price: '¥1,500~3,000', kids: '다다미/어린이정식 O', rsv: '불가 (대기)', meal: '점심 (요미탄)', gmaps: 'https://www.google.com/maps/search/?api=1&query=読谷漁協直売店' },
+            { name: 'A&W 마키미나토점', lat: 26.2730, lng: 127.7120, color: 'marker-orange', icon: '🍔', price: '~¥1,000', kids: '야외 놀이터/드라이브인', rsv: '불필요', meal: '이동 중 점심/간식', gmaps: 'https://www.google.com/maps/search/?api=1&query=A%26W+牧港店' }
+        ];
+
+        // 5. Icon Generator
+        const createCustomIcon = (colorClass, iconText, isSmall = false) => {
+            const sizeClass = isSmall ? 'custom-marker-sm' : 'w-10 h-10 text-xl';
+            return L.divIcon({
+                className: 'custom-icon',
+                html: `<div class="custom-marker ${colorClass} ${sizeClass}">${iconText}</div>`,
+                iconSize: isSmall ? [30, 30] : [40, 40],
+                iconAnchor: isSmall ? [15, 15] : [20, 20],
+                popupAnchor: isSmall ? [0, -15] : [0, -20]
+            });
+        };
+
+        const allMarkers = [];
+
+        // Add Bases
+        bases.forEach(loc => {
+            const popup = `<div class="bg-white w-64"><div class="${loc.color.replace('marker-', 'bg-')}-500 text-white p-3 font-bold text-lg">${loc.icon} ${loc.name}</div><div class="p-4"><p class="text-sm text-gray-600">${loc.desc}</p></div></div>`;
+            const m = L.marker([loc.lat, loc.lng], { icon: createCustomIcon(loc.color, loc.icon), zIndexOffset: 100 }).bindPopup(popup).addTo(map);
+            allMarkers.push(m);
+        });
+
+        // Add Attractions
+        attractions.forEach(loc => {
+            const popup = `
+                <div class="bg-white w-64">
+                    <div class="bg-purple-500 text-white p-3 font-bold text-base flex items-center gap-2"><span>${loc.icon}</span> ${loc.name}</div>
+                    <div class="p-4 space-y-2">
+                        <div class="flex gap-2 text-xs">
+                            <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded font-bold">👶 ${loc.kids}</span>
+                            <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">⏱️ ${loc.time}</span>
+                        </div>
+                        <p class="text-sm text-gray-700 leading-relaxed pt-1">${loc.desc}</p>
+                        <a href="${loc.gmaps}" target="_blank" class="block w-full text-center bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold py-2 rounded mt-2 border border-blue-200">🗺️ 구글 맵 열기</a>
+                    </div>
+                </div>`;
+            const m = L.marker([loc.lat, loc.lng], { icon: createCustomIcon(loc.color, loc.icon), zIndexOffset: 75 }).bindPopup(popup).addTo(map);
+            loc.marker = m;
+            allMarkers.push(m);
+        });
+
+        // Add Restaurants
+        restaurants.forEach(rest => {
+            const popup = `
+                <div class="bg-white w-56">
+                    <div class="bg-amber-500 text-white p-2 font-bold text-md flex items-center gap-2"><span>${rest.icon}</span> ${rest.name}</div>
+                    <div class="p-3 text-sm space-y-1">
+                        <p><strong>🕒 추천:</strong> ${rest.meal}</p>
+                        <p><strong>💴 예산:</strong> ${rest.price}</p>
+                        <p class="text-blue-600"><strong>👶 유아:</strong> ${rest.kids}</p>
+                        <p class="text-red-500"><strong>📞 예약:</strong> ${rest.rsv}</p>
+                        <a href="${rest.gmaps}" target="_blank" class="block w-full text-center bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold py-2 rounded mt-2 border border-blue-200">🗺️ 리뷰 보기</a>
+                    </div>
+                </div>`;
+            const m = L.marker([rest.lat, rest.lng], { icon: createCustomIcon(rest.color, rest.icon, true), zIndexOffset: 50 }).bindPopup(popup).addTo(map);
+            rest.marker = m;
+            allMarkers.push(m);
+        });
+
+        // 5.5 Draw Route Line
+        const routeCoords = [
+            [26.2045, 127.6411], // 공항
+            [26.5065, 127.8765], // 하얏트
+            [26.5049, 127.8502], // 만좌모
+            [26.4080, 127.7423], // 자키미성
+            [26.4026, 127.7148], // 호시노야
+            [26.6943, 127.8779]  // 츄라우미
+        ];
+
+        L.polyline(routeCoords, {
+            color: '#6366f1',
+            weight: 3,
+            opacity: 0.7,
+            dashArray: '10, 8',
+            lineJoin: 'round'
+        }).addTo(map);
+
+        // 6. UI Logic (Tabs & Lists)
+        const tabTour = document.getElementById('tab-tour');
+        const tabRest = document.getElementById('tab-rest');
+        const listContainer = document.getElementById('list-container');
+
+        const renderList = (type) => {
+            listContainer.innerHTML = '';
+            const data = type === 'tour' ? attractions : restaurants;
+            
+            data.forEach(item => {
+                const el = document.createElement('div');
+                el.className = `p-3 bg-white hover:bg-${type === 'tour' ? 'purple' : 'amber'}-50 cursor-pointer rounded-xl border border-gray-200 shadow-sm mb-2 transition-all`;
+                
+                if (type === 'tour') {
+                    el.innerHTML = `
+                        <div class="font-bold text-gray-800 text-sm flex items-center justify-between mb-1">
+                            <span><span class="mr-1">${item.icon}</span>${item.name}</span>
+                        </div>
+                        <div class="text-xs text-purple-600 font-bold mb-1">💡 ${item.kids}</div>
+                        <div class="text-[11px] text-gray-500 line-clamp-2">${item.desc.replace(/<\/?b>/g, '')}</div>
+                    `;
+                } else {
+                    el.innerHTML = `
+                        <div class="font-bold text-gray-800 text-sm flex items-center justify-between">
+                            <span class="truncate pr-2"><span class="mr-1">${item.icon}</span>${item.name}</span>
+                            <span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium shrink-0">${item.meal.split(' ')[0]}</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1.5 flex items-center justify-between">
+                            <div class="flex items-center gap-2 truncate">
+                                <span>${item.price}</span>
+                                <span class="text-gray-300">|</span>
+                                <span class="text-blue-600 truncate font-medium">${item.kids.split('/')[0]}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                el.addEventListener('click', () => {
+                    map.flyTo([item.lat, item.lng], 14, { duration: 1.2 });
+                    setTimeout(() => item.marker.openPopup(), 1200);
+                });
+                
+                listContainer.appendChild(el);
+            });
+        };
+
+        // Tab Events
+        tabTour.addEventListener('click', () => {
+            tabTour.className = "flex-1 py-2.5 text-sm font-bold tab-active transition-colors";
+            tabRest.className = "flex-1 py-2.5 text-sm font-bold tab-inactive hover:bg-gray-100 transition-colors";
+            renderList('tour');
+        });
+
+        tabRest.addEventListener('click', () => {
+            tabRest.className = "flex-1 py-2.5 text-sm font-bold tab-active text-amber-600 border-amber-500 transition-colors";
+            tabTour.className = "flex-1 py-2.5 text-sm font-bold tab-inactive hover:bg-gray-100 transition-colors";
+            renderList('rest');
+        });
+
+        // Initialize with Tour Tab
+        renderList('tour');
+
+        // 7. Panel Toggle Logic
+        const panelHeader = document.getElementById('panel-header');
+        const panelContent = document.getElementById('panel-content');
+        const panelChevron = document.getElementById('panel-chevron');
+
+        panelHeader.addEventListener('click', () => {
+            panelContent.classList.toggle('hidden');
+            panelChevron.classList.toggle('rotate-180');
+            panelHeader.classList.toggle('rounded-t-2xl');
+            panelHeader.classList.toggle('rounded-2xl');
+            panelHeader.classList.toggle('border-b');
+        });
+
+        const legendHeader = document.getElementById('legend-header');
+        const legendContent = document.getElementById('legend-content');
+        const legendChevron = document.getElementById('legend-chevron');
+
+        legendHeader.addEventListener('click', () => {
+            legendContent.classList.toggle('hidden');
+            legendChevron.classList.toggle('rotate-180');
+            legendHeader.classList.toggle('rounded-2xl');
+            legendHeader.classList.toggle('rounded-t-2xl');
+        });
+
+        // 지연 렌더링 후 화면 꽉 채우기 및 포커스 고정 (세계지도 방지)
+        setTimeout(() => {
+            map.invalidateSize();
+            const group = new L.featureGroup(allMarkers);
+            map.fitBounds(group.getBounds().pad(0.05), { maxZoom: 12 });
+        }, 150);
+
+    </script>
+</body>
+</html>
