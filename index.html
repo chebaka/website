@@ -40,6 +40,7 @@
         .marker-gray { background-color: #6b7280; }
         .marker-orange { background-color: #f59e0b; }
         .marker-purple { background-color: #a855f7; }
+        .marker-cyan { background-color: #06b6d4; } /* 해양 액티비티용 마커 */
         
         /* Small Marker for Restaurants */
         .custom-marker-sm {
@@ -61,7 +62,9 @@
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
         /* Tab Active States */
-        .tab-active { border-bottom-width: 2px; border-color: #3b82f6; color: #2563eb; }
+        .tab-active-tour { border-bottom-width: 2px; border-color: #a855f7; color: #7e22ce; }
+        .tab-active-marine { border-bottom-width: 2px; border-color: #06b6d4; color: #0e7490; }
+        .tab-active-rest { border-bottom-width: 2px; border-color: #f59e0b; color: #b45309; }
         .tab-inactive { border-bottom-width: 2px; border-color: transparent; color: #9ca3af; }
     </style>
 </head>
@@ -84,13 +87,14 @@
         <!-- Content -->
         <div id="panel-content" class="flex flex-col bg-white rounded-b-2xl overflow-hidden">
             <!-- Tabs -->
-            <div class="flex border-b border-gray-200 bg-gray-50">
-                <button id="tab-tour" class="flex-1 py-2.5 text-sm font-bold tab-active transition-colors">🎈 영유아 관광 (15)</button>
-                <button id="tab-rest" class="flex-1 py-2.5 text-sm font-bold tab-inactive hover:bg-gray-100 transition-colors">🍽️ 추천 식당 (30)</button>
+            <div class="flex border-b border-gray-200 bg-gray-50 text-xs sm:text-sm">
+                <button id="tab-tour" class="flex-1 py-2.5 font-bold tab-active-tour transition-colors">🎈관광(30)</button>
+                <button id="tab-marine" class="flex-1 py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors border-l border-r border-gray-200">🌊해양(30)</button>
+                <button id="tab-rest" class="flex-1 py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors">🍽️식당(30)</button>
             </div>
             
             <!-- List Container -->
-            <div id="list-container" class="overflow-y-auto p-2 space-y-1 max-h-[35vh] sm:max-h-[65vh] bg-gray-50/50">
+            <div id="list-container" class="overflow-y-auto p-2 space-y-1 max-h-[35vh] sm:max-h-[60vh] bg-gray-50/50">
                 <!-- JS will inject list items here -->
             </div>
         </div>
@@ -116,11 +120,15 @@
                         <div class="w-6 h-6 rounded-full bg-blue-500 border-2 border-white shadow flex items-center justify-center text-white text-[10px]">🏝️</div>
                         <div class="text-xs text-gray-700"><strong>호시노야 오키나와</strong><br><span class="text-[10px] text-gray-500">Day 3~8 숙소</span></div>
                     </div>
-                    <div class="flex items-center gap-2 mt-2 border-t border-gray-100 pt-3">
+                    <div class="flex items-center gap-2 mt-2 border-t border-gray-100 pt-2">
                         <div class="w-5 h-5 rounded-full bg-purple-500 border border-white shadow flex items-center justify-center text-white text-[10px]">🎈</div>
-                        <div class="text-xs text-gray-700"><strong>영유아 관광지</strong><br><span class="text-[10px] text-gray-500">유모차/카트/보트 가능</span></div>
+                        <div class="text-[11px] text-gray-700"><strong>영유아 관광지</strong></div>
                     </div>
-                    <div class="flex items-center gap-2 mt-2 border-t border-gray-100 pt-3">
+                    <div class="flex items-center gap-2 mt-1">
+                        <div class="w-5 h-5 rounded-full bg-cyan-500 border border-white shadow flex items-center justify-center text-white text-[10px]">🌊</div>
+                        <div class="text-[11px] text-gray-700"><strong>해양 액티비티</strong></div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-2 border-t border-gray-100 pt-2">
                         <div class="w-6 h-0 border-t-[3px] border-dashed border-indigo-500"></div>
                         <div class="text-xs text-gray-700"><strong>주요 이동 동선</strong><br><span class="text-[10px] text-gray-500">공항→숙소1→숙소2→관광</span></div>
                     </div>
@@ -160,7 +168,7 @@
         // 3. Attractions (15 places)
         const attractions = [
             { name: '만좌모', lat: 26.5049, lng: 127.8502, color: 'marker-purple', icon: '🌅', price: '¥100', kids: '유모차 평지 산책', time: '30분', desc: '하얏트 숙소에서 가깝고 길이 평탄해 유모차 밀기에 최적화되어 있습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=万座毛' },
-            { name: '부세나 해중공원 (글라스보트)', lat: 26.5385, lng: 127.9400, color: 'marker-purple', icon: '🐠', price: '¥1,560', kids: '무료 셔틀/배 탑승', time: '1시간', desc: '옷을 적시지 않고 바닷속 열대어를 볼 수 있는 고래 모양 보트. 선착장까지 셔틀로 이동합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ブセナ海中公園' },
+            { name: '부세나 해중공원 (전망탑)', lat: 26.5385, lng: 127.9405, color: 'marker-purple', icon: '🔭', price: '¥1,050', kids: '안고 내려가기(계단)', time: '40분', desc: '수심 5m 아래로 계단을 내려가 실제 바닷속을 창문으로 봅니다. 유모차는 불가하지만 아기 띠로 안고 갈만합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ブセナ海中展望塔' },
             { name: '비오스의 언덕', lat: 26.4180, lng: 127.8000, color: 'marker-purple', icon: '🚤', price: '¥1,800', kids: '정글 크루즈 보트', time: '2시간', desc: '안전한 크루즈 보트를 타고 식물과 동물을 구경합니다. 걷기 힘든 0~3세 아이들에게 최적입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ビオスの丘' },
             { name: '자키미성 유적', lat: 26.4080, lng: 127.7423, color: 'marker-purple', icon: '🏯', price: '무료', kids: '완만한 잔디밭', time: '40분', desc: '경사가 완만하고 잔디밭이 넓어 숙소 이동일 점심 식사 후 가볍게 걷기 좋은 코스입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=座喜味城跡' },
             { name: '잔파곶', lat: 26.4385, lng: 127.7145, color: 'marker-purple', icon: '🌊', price: '무료', kids: '넓고 평탄한 공원', time: '30분', desc: '탁 트인 바다와 새하얀 등대가 멋진 곳. 길쭉하고 평탄한 산책로가 있어 유모차 끌기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=残波岬' },
@@ -171,9 +179,62 @@
             { name: '갈라 아오이 우미', lat: 26.4085, lng: 127.7150, color: 'marker-purple', icon: '🧂', price: '무료입장', kids: '소금 아이스크림', time: '1시간', desc: '호시노야 오키나와 근처. 바다를 보며 아이스크림을 먹고, 소금 공장을 볼 수 있는 유모차 친화적 평지 시설입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=Gala青い海' },
             { name: '아메리칸 빌리지', lat: 26.3163, lng: 127.7578, color: 'marker-purple', icon: '🎡', price: '무료', kids: '완벽한 평지/포장길', time: '2시간', desc: '요미탄에서 남쪽으로 차로 20분. 길 전체가 평탄하게 포장되어 유모차 끌기 좋고 색감이 화려해 사진이 잘 나옵니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=アメリカンビレッジ' },
             { name: '류큐무라', lat: 26.4332, lng: 127.7735, color: 'marker-purple', icon: '🏮', price: '¥1,500', kids: '전통 마을/지붕 쉼터', time: '1.5시간', desc: '오키나와 전통 가옥 테마파크. 지붕이 있는 쉼터 공간이 많아 덥거나 비가 올 때 아이들과 피신하기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=琉球村' },
-            { name: '부세나 해중전망탑', lat: 26.5385, lng: 127.9405, color: 'marker-purple', icon: '🔭', price: '¥1,050', kids: '안고 내려가기(계단)', time: '40분', desc: '수심 5m 아래로 계단을 내려가 실제 바닷속을 창문으로 봅니다. 유모차는 불가하지만 아기 띠로 안고 갈만합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ブセナ海中展望塔' },
+            { name: '츄라우미 곁 바다거북 방생장', lat: 26.6960, lng: 127.8760, color: 'marker-purple', icon: '🐢', price: '무료', kids: '관람 용이', time: '30분', desc: '수족관 야외에 위치. 수면 위로 올라오는 큰 거북이를 아이들이 유모차에 탄 채로도 가까이서 볼 수 있습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=美ら海水族館+ウミガメ館' },
             { name: '오키나와 후르츠 랜드', lat: 26.6160, lng: 127.9940, color: 'marker-purple', icon: '🥭', price: '¥1,200', kids: '전 구역 실내/유모차', time: '1.5시간', desc: '파인애플 파크 바로 옆. 퀴즈를 풀며 새와 과일을 봅니다. 전체가 지붕으로 덮여있어 날씨 영향 없이 유모차 관람이 가능합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=沖縄フルーツらんど' },
-            { name: '도구치 비치 공원', lat: 26.3653, lng: 127.7405, color: 'marker-purple', icon: '🏴‍☠️', price: '무료', kids: '해적선 대형 놀이터', time: '1시간', desc: '요미탄 남쪽의 평화로운 해변. 바다 바로 옆에 거대한 배 모양의 놀이터가 있어 3세 아이가 뛰놀기 가장 완벽합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=渡具知ビーチ' }
+            { name: '도구치 비치 공원', lat: 26.3653, lng: 127.7405, color: 'marker-purple', icon: '🏴‍☠️', price: '무료', kids: '해적선 대형 놀이터', time: '1시간', desc: '요미탄 남쪽의 평화로운 해변. 바다 바로 옆에 거대한 배 모양의 놀이터가 있어 3세 아이가 뛰놀기 가장 완벽합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=渡具知ビーチ' },
+            
+            // Adult Attractions (15 places)
+            { name: '오키나와 월드', lat: 26.1397, lng: 127.7503, color: 'marker-purple', icon: '🦇', price: '¥2,000', kids: '습한 동굴 탐험/도보', time: '2시간', desc: '거대한 종유동굴(옥천동) 코스가 깁니다. 미끄럽고 체력 소모가 커서 아이보다는 성인 교대 관람이나 어른끼리 가기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=おきなわワールド', target: 'adult' },
+            { name: '슈리성 공원', lat: 26.2170, lng: 127.7195, color: 'marker-purple', icon: '🏯', price: '¥400', kids: '계단 및 오르막길', time: '1.5시간', desc: '류큐 왕국의 궁전. 역사적 가치가 높으나 고지대에 있어 언덕과 계단이 많으므로 어르신이나 성인 코스로 추천합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=首里城公園', target: 'adult' },
+            { name: '나키진 성터', lat: 26.6915, lng: 127.9280, color: 'marker-purple', icon: '⛰️', price: '¥400', kids: '가파른 성곽 트레킹', time: '1시간', desc: '북부의 장엄한 성곽. 탁 트인 바다 전망이 예술이지만, 길이 울퉁불퉁하고 가팔라 유모차 진입이 불가능합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=今帰仁城跡', target: 'adult' },
+            { name: '세이화우타키', lat: 26.1735, lng: 127.8260, color: 'marker-purple', icon: '🌿', price: '¥300', kids: '미끄러운 숲길', time: '1시간', desc: '오키나와 최고의 신성한 숲. 바위 틈을 지나가는 신비로운 코스이며 정숙이 요구되는 성인 맞춤 힐링 스팟입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=斎場御嶽', target: 'adult' },
+            { name: '오리온 해피 파크', lat: 26.5910, lng: 127.9880, color: 'marker-purple', icon: '🍻', price: '무료(예약)', kids: '맥주 시음/성인 코스', time: '1시간', desc: '나고 시내에 위치한 오리온 맥주 공장 견학. 갓 뽑은 시원한 생맥주를 무료로 시음할 수 있는 어른들의 최애 코스입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=オリオンハッピーパーク', target: 'adult' },
+            { name: '아메리칸 빌리지 바(Bar)', lat: 26.3163, lng: 127.7578, color: 'marker-purple', icon: '🍹', price: '개별', kids: '심야 야경/칵테일', time: '자유', desc: '밤이 되면 진가를 발휘하는 아메리칸 빌리지의 펍(Pub)과 칵테일 바. 일과 후 성인들끼리 분위기 내기 완벽합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=アメリカンビレッジ', target: 'adult' },
+            { name: '우미카지 테라스', lat: 26.1740, lng: 127.6430, color: 'marker-purple', icon: '☕', price: '무료', kids: '계단식/언덕', time: '1.5시간', desc: '나하 공항 근처 세나가지마의 산토리니풍 테라스. 좁은 계단식 상가라 유모차는 힘들지만 뷰포인트가 환상적입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ウミカジテラス', target: 'adult' },
+            { name: '국제거리 포장마차촌', lat: 26.2165, lng: 127.6880, color: 'marker-purple', icon: '🍢', price: '개별', kids: '비좁은 공간/야간 술집', time: '자유', desc: '나하 시내 중심의 현지 감성 넘치는 포장마차 거리. 시끌벅적하고 좁아서 아이들은 재워두고 교대로 다녀오기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=国際通り屋台村', target: 'adult' },
+            { name: '다이세키린잔', lat: 26.8375, lng: 128.2435, color: 'marker-purple', icon: '🥾', price: '¥1,200', kids: '기암괴석 트레킹', time: '2시간', desc: '얀바루 국립공원 내 열대 카르스트 지형. 기괴한 바위 사이를 걷는 등산 코스가 있어 성인 액티비티로 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=大石林山', target: 'adult' },
+            { name: '헤도곶 (최북단)', lat: 26.8685, lng: 128.2610, color: 'marker-purple', icon: '🌊', price: '무료', kids: '가파른 절벽/강풍', time: '40분', desc: '오키나와 본섬 최북단의 거친 바다 절벽. 바람이 매우 강하고 웅장한 대자연을 느낄 수 있는 드라이브 코스입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=辺戸岬', target: 'adult' },
+            { name: '나미노우에 궁', lat: 26.2205, lng: 127.6710, color: 'marker-purple', icon: '⛩️', price: '무료', kids: '계단 이동/신사 참배', time: '40분', desc: '바다 옆 절벽 위에 세워진 아름다운 신사. 공항 가기 전 나하 시내에서 일본 전통 감성을 느끼기 좋은 성인 산책로입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=波上宮', target: 'adult' },
+            { name: '야치문 도자기 마을', lat: 26.4175, lng: 127.7470, color: 'marker-purple', icon: '🏺', price: '무료', kids: '도자기 쇼핑/깨짐 주의', time: '1.5시간', desc: '요미탄의 조용한 숲속 도자기 공방 마을. 예쁜 그릇을 구경하고 구매할 수 있어 조부모님이나 어른들이 아주 좋아합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=やちむんの里', target: 'adult' },
+            { name: '오키나와 현립 박물관', lat: 26.2270, lng: 127.6935, color: 'marker-purple', icon: '🏛️', price: '¥530', kids: '정숙 관람/실내', time: '1.5시간', desc: '오키나와의 역사와 류큐 문화를 깊이 있게 이해할 수 있는 곳. 더운 낮 시간에 어른들끼리 교양을 쌓기 좋은 실내입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=沖縄県立博物館・美術館', target: 'adult' },
+            { name: '츄코 증류소 (아와모리)', lat: 26.1755, lng: 127.6700, color: 'marker-purple', icon: '🍶', price: '무료', kids: '전통주 견학/시음', time: '1시간', desc: '오키나와 전통 소주인 아와모리를 만드는 나무 오크통과 가마를 견학하고 시음할 수 있는 특별한 양조장입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=忠孝酒造', target: 'adult' },
+            { name: '잔파곶 등대 내부 전망대', lat: 26.4385, lng: 127.7145, color: 'marker-purple', icon: '🗼', price: '¥300', kids: '가파른 99계단 등반', time: '30분', desc: '잔파곶 공원은 평지지만, 등대 꼭대기까지 올라가는 좁고 가파른 99개의 계단은 성인들만 도전해 볼 수 있는 뷰포인트입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=残波岬灯台', target: 'adult' }
+        ];
+
+        // 3-2. Marine Activities (30 places - Expanded)
+        const marineActivities = [
+            { name: '하얏트 세라가키 비치', lat: 26.5055, lng: 127.8760, color: 'marker-cyan', icon: '🏖️', price: '투숙객 전용', kids: '모래놀이/얕은물 O', time: '자유', desc: '하얏트 세라가키 내 프라이빗 비치. 파도가 막혀 있어 0~3세 아기들 첫 바다 수영과 모래놀이에 완벽합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=瀬良垣ビーチ' },
+            { name: '에메랄드 비치', lat: 26.6975, lng: 127.8785, color: 'marker-cyan', icon: '⛱️', price: '무료', kids: '파도 없음/안전 최고', time: '1~2시간', desc: '츄라우미 수족관 바로 옆. 라군(석호) 형태로 파도가 거의 없어 1~3세 아이들이 튜브 타고 놀기 가장 안전한 해변 중 하나입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=エメラルドビーチ' },
+            { name: '잔파 비치', lat: 26.4380, lng: 127.7170, color: 'marker-cyan', icon: '🏝️', price: '무료', kids: '고운 모래/안전망 O', time: '자유', desc: '호시노야 숙소에서 아주 가깝습니다. 모래가 부드럽고 해파리 방지 그물이 있어 아기들 발 담그고 놀기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=残波ビーチ' },
+            { name: '니라이 비치 (생태체험)', lat: 26.4130, lng: 127.7145, color: 'marker-cyan', icon: '🦀', price: '무료', kids: '소라게 잡기 생태체험', time: '1시간', desc: '천연 비치로 간조(썰물) 때 물이 빠지면 얕은 웅덩이에서 아이들과 안전하게 소라게나 작은 물고기를 관찰할 수 있습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ニライビーチ' },
+            { name: '푸른동굴 스노클링 (마에다 곶)', lat: 26.4440, lng: 127.7715, color: 'marker-cyan', icon: '🤿', price: '투어 ¥3,500~', kids: '유아 불가 (어른 교대)', time: '2시간', desc: '오키나와 최고의 스노클링 스팟. 영유아는 동반 불가하므로, 한 팀이 아이를 보는 동안 성인들이 교대로 다녀오기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=真栄田岬' },
+            { name: '카리유시 비치 (글라스 보트)', lat: 26.5290, lng: 127.9300, color: 'marker-cyan', icon: '🚤', price: '¥1,600', kids: '옷 입고 배 탑승', time: '1시간', desc: '투명한 유리 바닥을 통해 열대어를 보는 보트. 옷을 적시지 않고 탈 수 있어 영유아 동반 가족에게 필수 액티비티입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=かりゆしビーチ' },
+            { name: '만자 비치 (오션파크)', lat: 26.5090, lng: 127.8590, color: 'marker-cyan', icon: '🏄‍♂️', price: '파크 유료', kids: '해변 가장자리 놀이 O', time: '자유', desc: '대형 튜브 파크는 3세 이상부터 가능하나, 해변 자체 수심이 얕고 경치가 좋아 아기들도 가장자리에서 물놀이하기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=万座ビーチ' },
+            { name: '비세자키 해변', lat: 26.7085, lng: 127.8805, color: 'marker-cyan', icon: '🐠', price: '주차장 ¥500', kids: '수심 얕음/물고기 관찰', time: '1시간', desc: '츄라우미 근처. 물이 빠질 때 무릎 높이의 얕은 물에서도 수많은 열대어를 볼 수 있어 아기들 손잡고 자연 관찰하기 제격입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=備瀬崎' },
+            { name: '수중 관광선 오르카호', lat: 26.2120, lng: 127.6750, color: 'marker-cyan', icon: '🚢', price: '¥3,000', kids: '에어컨/실내 관람', time: '1시간', desc: '나하 항구 출발. 잠수함처럼 배 아래로 내려가 바닷속을 봅니다. 마지막 날 공항 가기 전 편안하게 즐기는 체험입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=水中観光船オルカ' },
+            { name: '문 비치', lat: 26.4385, lng: 127.8010, color: 'marker-cyan', icon: '🌙', price: '비투숙객 ¥500', kids: '방파제/잔잔한 수면', time: '자유', desc: '초승달 모양의 해변. 방파제가 파도를 막아주어 호수처럼 잔잔하며, 리조트 수영장과 바로 연결되어 있어 아이들 놀기 편합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ムーンビーチ' },
+            { name: '고릴라 촙', lat: 26.6350, lng: 127.8860, color: 'marker-cyan', icon: '🤿', price: '무료', kids: '얕은 물 대기(성인용)', time: '2시간', desc: '성인 스노클링 명소. 계단으로 바로 바다에 들어갈 수 있어, 아기와 보호자는 얕은 곳에 있고 성인들이 교대로 스노클링하기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ゴリラチョップ' },
+            { name: '미션 비치', lat: 26.5170, lng: 127.8990, color: 'marker-cyan', icon: '⛱️', price: '입장료 ¥300', kids: '프라이빗/한적함', time: '자유', desc: '하얏트 세라가키 인근. 교회에서 관리하여 관리가 잘 되어있고 인파가 적어 가족끼리 오붓하고 조용하게 바다를 즐길 수 있습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ミッションビーチ' },
+            { name: '선셋 비치 (아메리칸 빌리지)', lat: 26.3150, lng: 127.7560, color: 'marker-cyan', icon: '🌇', price: '무료', kids: '도심형 인공 해변', time: '1시간', desc: '파도가 전혀 없는 인공 해변이라 안전하며, 가볍게 발 담그고 물놀이 후 유모차 끌고 바로 식당가로 이동하기 완벽합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=サンセットビーチ+北谷' },
+            { name: '다이아몬드 비치', lat: 26.4955, lng: 127.8545, color: 'marker-cyan', icon: '💎', price: '무료', kids: '얕고 투명한 바다', time: '30분', desc: '오카시고텐 온나점 뒤에 위치. 사람은 적고 물이 매우 투명해 아이들과 예쁜 바다를 배경으로 사진 찍고 가볍게 물장구치기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ダイヤモンドビーチ+恩納村' },
+            { name: '부세나 해중공원 (글라스보트)', lat: 26.5385, lng: 127.9400, color: 'marker-cyan', icon: '🐳', price: '¥1,560', kids: '무료 셔틀/배 탑승', time: '1시간', desc: '옷을 적시지 않고 바닷속을 보는 고래 모양 보트. 셔틀버스가 선착장 앞까지 가므로 유아 동반 시 체력 소모를 아낄 수 있습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ブセナ海中公園' },
+            
+            // Adult Marine Activities (15 places)
+            { name: '케라마 제도 스쿠버다이빙', lat: 26.1974, lng: 127.3142, color: 'marker-cyan', icon: '🤿', price: '¥15,000~', kids: '깊은바다/배멀미 주의', time: '반나절', desc: '세계적인 투명도의 케라마 블루에서 즐기는 심해 다이빙. 나하 항구에서 배를 타고 나가므로 성인들만의 완벽한 액티비티입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ケラマ諸島+ダイビング', target: 'adult' },
+            { name: '마에다곶 푸른동굴 다이빙', lat: 26.4440, lng: 127.7715, color: 'marker-cyan', icon: '🔦', price: '¥8,000~', kids: '수심 깊음/산소통 장비', time: '2시간', desc: '동굴 안으로 들어오는 신비로운 파란 빛을 보기 위해 산소통을 매고 깊숙이 잠수하는 성인 타겟의 스릴 넘치는 투어입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=青の洞窟+ダイビング', target: 'adult' },
+            { name: '온나손 패러세일링', lat: 26.5000, lng: 127.8500, color: 'marker-cyan', icon: '🪂', price: '¥7,000~', kids: '고공 비행 스릴', time: '1.5시간', desc: '모터보트에 낙하산을 매달아 하늘 위 50m까지 올라가 온나손의 에메랄드 바다를 내려다보는 짜릿한 체험입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=恩納村+パラセーリング', target: 'adult' },
+            { name: '얀바루 맹그로브 카약', lat: 26.6080, lng: 128.0560, color: 'marker-cyan', icon: '🛶', price: '¥5,000~', kids: '강도 높은 노 젓기', time: '2시간', desc: '북부 정글의 강을 따라 직접 카약을 저으며 아마존 같은 맹그로브 숲을 탐험하는 체력 소모형 성인 생태 투어입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=慶佐次湾のヒルギ林', target: 'adult' },
+            { name: '민나섬 스노클링 투어', lat: 26.6380, lng: 127.8180, color: 'marker-cyan', icon: '🏝️', price: '투어 ¥6,000~', kids: '고속선 이동/깊은 산호', time: '반나절', desc: '토구치 항에서 배를 타고 15분 들어가 만나는 초승달 모양의 섬. 수심이 깊고 산호초가 울창해 어른들의 스노클링 성지입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=水納島', target: 'adult' },
+            { name: '선셋 SUP 패들보드', lat: 26.4380, lng: 127.7170, color: 'marker-cyan', icon: '🏄', price: '¥5,000~', kids: '코어 근력/물에 빠짐', time: '1.5시간', desc: '노을이 지는 요미탄이나 온나 해변에서 보드 위에 서서 균형을 잡으며 노를 젓는 성인 맞춤 힐링 & 코어 운동입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=沖縄+SUP', target: 'adult' },
+            { name: '마린워크 (씨워크)', lat: 26.5050, lng: 127.8600, color: 'marker-cyan', icon: '🧑‍🚀', price: '¥8,000~', kids: '수압/무거운 우주복 헬멧', time: '2시간', desc: '무거운 헬멧을 쓰고 바다 밑바닥을 걸어 다니며 물고기에게 먹이를 줍니다. 다이빙이 무서운 어른들에게 추천합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=沖縄+マリンウォーク', target: 'adult' },
+            { name: '미야기 해안 서핑', lat: 26.3265, lng: 127.7445, color: 'marker-cyan', icon: '🌊', price: '보드 대여 ¥3,000', kids: '큰 파도/강한 체력', time: '자유', desc: '아메리칸 빌리지 인근의 서핑 핫플레이스. 파도가 높아 초보자 강습이나 서퍼 어른들이 다이내믹하게 즐기기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=宮城海岸+サーフィン', target: 'adult' },
+            { name: '제트스키 & 바나나보트', lat: 26.4500, lng: 127.8000, color: 'marker-cyan', icon: '🚤', price: '¥3,000~', kids: '강한 흔들림/익스트림', time: '30분', desc: '대부분의 비치에서 현장 결제로 탈 수 있는 해양 스포츠. 빠른 속도와 물벼락을 맞으며 스트레스를 날려버립니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=沖縄+マリンスポーツ', target: 'adult' },
+            { name: '플라이보드', lat: 26.5090, lng: 127.8590, color: 'marker-cyan', icon: '🚀', price: '¥8,000~', kids: '고난도 수압 부양', time: '1시간', desc: '발에 강력한 수압 분사기를 달고 아이언맨처럼 물 위로 날아오르는 고난이도 익스트림 성인 액티비티입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=沖縄+フライボード', target: 'adult' },
+            { name: '야간 스노클링 (야광충)', lat: 26.4440, lng: 127.7715, color: 'marker-cyan', icon: '🌙', price: '¥6,000~', kids: '칠흑 같은 심야 바다', time: '2시간', desc: '밤바다에 들어가 손전등을 끄고 플랑크톤(야광충)이 반짝이는 우주 같은 모습을 감상하는 이색 어른 투어입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=沖縄+ナイトシュノーケリング', target: 'adult' },
+            { name: '무인도 씨카약 투어', lat: 26.6350, lng: 127.8860, color: 'marker-cyan', icon: '🚣', price: '¥7,000~', kids: '먼 바다로 체력 소모', time: '3시간', desc: '본섬에서 바다를 가로질러 카약을 저어 무인도에 도착한 뒤, 커피를 마시고 스노클링을 즐기는 탐험 코스입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=沖縄+シーカヤック', target: 'adult' },
+            { name: '선상 바다낚시', lat: 26.3750, lng: 127.7240, color: 'marker-cyan', icon: '🎣', price: '¥8,000~', kids: '긴 배낚시 시간', time: '3~4시간', desc: '어항에서 배를 타고 나가 오키나와 앞바다에서 열대어를 낚는 투어. 잡은 생선은 근처 식당에서 조리해 먹을 수 있습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=沖縄+船釣り', target: 'adult' },
+            { name: '웨이크보드', lat: 26.5170, lng: 127.8990, color: 'marker-cyan', icon: '🏄‍♂️', price: '¥5,000~', kids: '모터보트 견인/속도감', time: '30분', desc: '모터보트가 끌어주는 줄을 잡고 바다 위를 시원하게 미끄러지는 스피디한 스포츠로 성인들의 만족도가 높습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=沖縄+ウェイクボード', target: 'adult' },
+            { name: '프리다이빙 / 머메이드 체험', lat: 26.4385, lng: 127.7145, color: 'marker-cyan', icon: '🧜‍♀️', price: '¥10,000~', kids: '숨 참고 깊은 잠수', time: '2시간', desc: '장비 없이 숨을 참고 깊은 바다로 내려가는 프리다이빙이나, 인어공주 꼬리를 입고 수중 사진을 찍는 이색 인생샷 체험입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=沖縄+フリーダイビング', target: 'adult' }
         ];
 
         // 4. Restaurants (30 places)
@@ -231,21 +292,32 @@
             allMarkers.push(m);
         });
 
-        // Add Attractions
-        attractions.forEach(loc => {
-            const popup = `
+        // Add Attractions & Marine
+        const createAttractionPopup = (loc, isMarine = false) => {
+            const colorName = isMarine ? 'cyan' : 'purple';
+            const targetIcon = loc.target === 'adult' ? '🧑' : '👶';
+            return `
                 <div class="bg-white w-64">
-                    <div class="bg-purple-500 text-white p-3 font-bold text-base flex items-center gap-2"><span>${loc.icon}</span> ${loc.name}</div>
+                    <div class="bg-${colorName}-500 text-white p-3 font-bold text-base flex items-center gap-2"><span>${loc.icon}</span> ${loc.name}</div>
                     <div class="p-4 space-y-2">
                         <div class="flex gap-2 text-xs">
-                            <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded font-bold">👶 ${loc.kids}</span>
+                            <span class="bg-${colorName}-100 text-${colorName}-700 px-2 py-1 rounded font-bold">${targetIcon} ${loc.kids}</span>
                             <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">⏱️ ${loc.time}</span>
                         </div>
                         <p class="text-sm text-gray-700 leading-relaxed pt-1">${loc.desc}</p>
                         <a href="${loc.gmaps}" target="_blank" class="block w-full text-center bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold py-2 rounded mt-2 border border-blue-200">🗺️ 구글 맵 열기</a>
                     </div>
                 </div>`;
-            const m = L.marker([loc.lat, loc.lng], { icon: createCustomIcon(loc.color, loc.icon), zIndexOffset: 75 }).bindPopup(popup).addTo(map);
+        };
+
+        attractions.forEach(loc => {
+            const m = L.marker([loc.lat, loc.lng], { icon: createCustomIcon(loc.color, loc.icon), zIndexOffset: 75 }).bindPopup(createAttractionPopup(loc, false)).addTo(map);
+            loc.marker = m;
+            allMarkers.push(m);
+        });
+
+        marineActivities.forEach(loc => {
+            const m = L.marker([loc.lat, loc.lng], { icon: createCustomIcon(loc.color, loc.icon), zIndexOffset: 80 }).bindPopup(createAttractionPopup(loc, true)).addTo(map);
             loc.marker = m;
             allMarkers.push(m);
         });
@@ -288,23 +360,32 @@
 
         // 6. UI Logic (Tabs & Lists)
         const tabTour = document.getElementById('tab-tour');
+        const tabMarine = document.getElementById('tab-marine');
         const tabRest = document.getElementById('tab-rest');
         const listContainer = document.getElementById('list-container');
 
         const renderList = (type) => {
             listContainer.innerHTML = '';
-            const data = type === 'tour' ? attractions : restaurants;
+            let data = [];
+            let colorName = '';
+            
+            if (type === 'tour') { data = attractions; colorName = 'purple'; }
+            else if (type === 'marine') { data = marineActivities; colorName = 'cyan'; }
+            else { data = restaurants; colorName = 'amber'; }
             
             data.forEach(item => {
                 const el = document.createElement('div');
-                el.className = `p-3 bg-white hover:bg-${type === 'tour' ? 'purple' : 'amber'}-50 cursor-pointer rounded-xl border border-gray-200 shadow-sm mb-2 transition-all`;
+                el.className = `p-3 bg-white hover:bg-${colorName}-50 cursor-pointer rounded-xl border border-gray-200 shadow-sm mb-2 transition-all`;
                 
-                if (type === 'tour') {
+                if (type === 'tour' || type === 'marine') {
+                    const targetIcon = item.target === 'adult' ? '🧑' : '💡';
                     el.innerHTML = `
                         <div class="font-bold text-gray-800 text-sm flex items-center justify-between mb-1">
                             <span><span class="mr-1">${item.icon}</span>${item.name}</span>
                         </div>
-                        <div class="text-xs text-purple-600 font-bold mb-1">💡 ${item.kids}</div>
+                        <div class="text-xs text-${colorName}-600 font-bold mb-1 flex justify-between">
+                            <span>${targetIcon} ${item.kids}</span>
+                        </div>
                         <div class="text-[11px] text-gray-500 line-clamp-2">${item.desc.replace(/<\/?b>/g, '')}</div>
                     `;
                 } else {
@@ -333,15 +414,27 @@
         };
 
         // Tab Events
+        const resetTabs = () => {
+            tabTour.className = "flex-1 py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors";
+            tabMarine.className = "flex-1 py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors border-l border-r border-gray-200";
+            tabRest.className = "flex-1 py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors";
+        };
+
         tabTour.addEventListener('click', () => {
-            tabTour.className = "flex-1 py-2.5 text-sm font-bold tab-active transition-colors";
-            tabRest.className = "flex-1 py-2.5 text-sm font-bold tab-inactive hover:bg-gray-100 transition-colors";
+            resetTabs();
+            tabTour.className = "flex-1 py-2.5 font-bold tab-active-tour transition-colors";
             renderList('tour');
         });
 
+        tabMarine.addEventListener('click', () => {
+            resetTabs();
+            tabMarine.className = "flex-1 py-2.5 font-bold tab-active-marine transition-colors border-l border-r border-gray-200";
+            renderList('marine');
+        });
+
         tabRest.addEventListener('click', () => {
-            tabRest.className = "flex-1 py-2.5 text-sm font-bold tab-active text-amber-600 border-amber-500 transition-colors";
-            tabTour.className = "flex-1 py-2.5 text-sm font-bold tab-inactive hover:bg-gray-100 transition-colors";
+            resetTabs();
+            tabRest.className = "flex-1 py-2.5 font-bold tab-active-rest transition-colors";
             renderList('rest');
         });
 
