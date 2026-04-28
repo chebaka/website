@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>오키나와 7박 8일 가족 여행 지도</title>
     
     <!-- Tailwind CSS for UI styling -->
@@ -15,7 +15,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Pretendard', sans-serif; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Pretendard', sans-serif; overflow: hidden; }
         #map { width: 100%; height: 100vh; z-index: 1; }
         
         /* Custom Marker Styles */
@@ -40,7 +40,7 @@
         .marker-gray { background-color: #6b7280; }
         .marker-orange { background-color: #f59e0b; }
         .marker-purple { background-color: #a855f7; }
-        .marker-cyan { background-color: #06b6d4; } /* 해양 액티비티용 마커 */
+        .marker-cyan { background-color: #06b6d4; } 
         
         /* Small Marker for Restaurants */
         .custom-marker-sm {
@@ -66,79 +66,83 @@
         .tab-active-marine { border-bottom-width: 2px; border-color: #06b6d4; color: #0e7490; }
         .tab-active-rest { border-bottom-width: 2px; border-color: #f59e0b; color: #b45309; }
         .tab-inactive { border-bottom-width: 2px; border-color: transparent; color: #9ca3af; }
+
+        /* Mobile Adjustments */
+        @media (max-width: 640px) {
+            .leaflet-control-zoom { display: none !important; } /* Hide zoom on mobile */
+        }
     </style>
 </head>
-<body class="relative">
+<body class="relative bg-gray-100">
 
     <!-- Map Container -->
     <div id="map"></div>
 
-    <!-- Interactive Panel (Left) -->
-    <div id="ui-restaurant-list" class="absolute top-4 left-4 z-[1000] flex flex-col pointer-events-auto bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 w-[calc(100%-2rem)] max-w-xs sm:max-w-sm transition-all duration-300">
-        <!-- Header -->
-        <div id="panel-header" class="p-3 sm:p-4 bg-white rounded-t-2xl cursor-pointer flex justify-between items-center hover:bg-gray-50 border-b border-gray-200 shrink-0 select-none transition-colors">
-            <div>
-                <h2 class="text-sm sm:text-base font-bold text-gray-800 flex items-center gap-2">🔍 맞춤 장소 탐색기</h2>
-                <p class="text-[10px] text-gray-500 mt-0.5">클릭하여 접기/펼치기</p>
+    <!-- UI Overlay Legend (Right - Top) -->
+    <div id="ui-overlay" class="absolute top-4 right-4 z-[1000] flex flex-col gap-4 w-[calc(100%-2rem)] max-w-[180px] sm:max-w-[240px] pointer-events-none">
+        <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 pointer-events-auto overflow-hidden">
+            <div id="legend-header" class="p-3 cursor-pointer flex justify-between items-center hover:bg-gray-50 select-none bg-white rounded-2xl transition-colors">
+                <div>
+                    <h1 class="text-sm sm:text-base font-bold text-gray-800">📍 거점 지도</h1>
+                </div>
+                <svg id="legend-chevron" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
             </div>
-            <svg id="panel-chevron" class="w-5 h-5 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+            <div id="legend-content" class="px-3 pb-3 hidden bg-white">
+                <div class="space-y-1.5 pt-2 border-t border-gray-100">
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 rounded-full bg-green-500 border border-white shadow flex items-center justify-center text-white text-[10px]">🏨</div>
+                        <div class="text-[11px] sm:text-xs text-gray-700"><strong>하얏트 세라가키</strong></div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 rounded-full bg-blue-500 border border-white shadow flex items-center justify-center text-white text-[10px]">🏝️</div>
+                        <div class="text-[11px] sm:text-xs text-gray-700"><strong>호시노야 오키나와</strong></div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-2 border-t border-gray-100 pt-1.5">
+                        <div class="w-4 h-4 rounded-full bg-purple-500 border border-white shadow flex items-center justify-center text-white text-[8px]">🎈</div>
+                        <div class="text-[10px] sm:text-[11px] text-gray-700"><strong>관광지</strong> (영유아/성인)</div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-1">
+                        <div class="w-4 h-4 rounded-full bg-cyan-500 border border-white shadow flex items-center justify-center text-white text-[8px]">🌊</div>
+                        <div class="text-[10px] sm:text-[11px] text-gray-700"><strong>해양 액티비티</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Panel (Bottom Sheet on Mobile / Left Panel on Desktop) -->
+    <div id="ui-restaurant-list" class="fixed sm:absolute bottom-0 sm:bottom-auto sm:top-4 left-0 sm:left-4 z-[1000] flex flex-col pointer-events-auto bg-white/95 backdrop-blur-sm w-full sm:w-[360px] rounded-t-3xl sm:rounded-2xl shadow-[0_-10px_20px_rgba(0,0,0,0.1)] sm:shadow-xl border-t sm:border border-gray-200 transition-transform duration-300 ease-in-out transform translate-y-0">
+        
+        <!-- Header (Drag Handle area for mobile) -->
+        <div id="panel-header" class="h-16 px-4 bg-white rounded-t-3xl sm:rounded-t-2xl cursor-pointer flex justify-between items-center hover:bg-gray-50 sm:border-b border-gray-200 shrink-0 select-none relative">
+            <!-- Mobile Handle Indicator -->
+            <div class="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-300 rounded-full sm:hidden"></div>
+            
+            <div class="w-full flex justify-between items-center mt-2 sm:mt-0">
+                <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">🔍 맞춤 장소 탐색기</h2>
+                <svg id="panel-chevron" class="w-5 h-5 text-gray-500 transform transition-transform sm:block hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+            </div>
         </div>
         
         <!-- Content -->
-        <div id="panel-content" class="flex flex-col bg-white rounded-b-2xl overflow-hidden">
+        <div id="panel-content" class="flex flex-col bg-white sm:rounded-b-2xl overflow-hidden pb-4 sm:pb-0">
             <!-- Tabs -->
-            <div class="flex border-b border-gray-200 bg-gray-50 text-xs sm:text-sm">
-                <button id="tab-tour" class="flex-1 py-2.5 font-bold tab-active-tour transition-colors">🎈관광(30)</button>
-                <button id="tab-marine" class="flex-1 py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors border-l border-r border-gray-200">🌊해양(30)</button>
-                <button id="tab-rest" class="flex-1 py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors">🍽️식당(30)</button>
+            <div class="flex border-b border-gray-200 bg-gray-50 text-[13px] sm:text-sm">
+                <button id="tab-tour" class="flex-1 py-3 sm:py-2.5 font-bold tab-active-tour transition-colors">🎈관광(30)</button>
+                <button id="tab-marine" class="flex-1 py-3 sm:py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors border-l border-r border-gray-200">🌊해양(30)</button>
+                <button id="tab-rest" class="flex-1 py-3 sm:py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors">🍽️식당(30)</button>
             </div>
             
             <!-- List Container -->
-            <div id="list-container" class="overflow-y-auto p-2 space-y-1 max-h-[35vh] sm:max-h-[60vh] bg-gray-50/50">
+            <!-- Mobile: max 50vh, Desktop: max 65vh -->
+            <div id="list-container" class="overflow-y-auto p-2 space-y-1 h-[50vh] sm:h-auto sm:max-h-[60vh] bg-gray-50/50">
                 <!-- JS will inject list items here -->
             </div>
         </div>
     </div>
 
-    <!-- UI Overlay Legend (Right) -->
-    <div id="ui-overlay" class="absolute top-4 right-4 z-[1000] flex flex-col gap-4 w-[calc(100%-2rem)] max-w-[200px] sm:max-w-[240px] pointer-events-none">
-        <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 pointer-events-auto overflow-hidden">
-            <div id="legend-header" class="p-3 sm:p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 select-none bg-white rounded-2xl transition-colors">
-                <div>
-                    <h1 class="text-sm sm:text-base font-bold text-gray-800">📍 거점 지도</h1>
-                    <p class="text-[10px] text-gray-500 mt-0.5">클릭하여 열기</p>
-                </div>
-                <svg id="legend-chevron" class="w-5 h-5 text-gray-500 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
-            </div>
-            <div id="legend-content" class="px-4 pb-4 hidden bg-white">
-                <div class="space-y-2 pt-2 border-t border-gray-100">
-                    <div class="flex items-center gap-2">
-                        <div class="w-6 h-6 rounded-full bg-green-500 border-2 border-white shadow flex items-center justify-center text-white text-[10px]">🏨</div>
-                        <div class="text-xs text-gray-700"><strong>하얏트 세라가키</strong><br><span class="text-[10px] text-gray-500">Day 1~3 숙소</span></div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-6 h-6 rounded-full bg-blue-500 border-2 border-white shadow flex items-center justify-center text-white text-[10px]">🏝️</div>
-                        <div class="text-xs text-gray-700"><strong>호시노야 오키나와</strong><br><span class="text-[10px] text-gray-500">Day 3~8 숙소</span></div>
-                    </div>
-                    <div class="flex items-center gap-2 mt-2 border-t border-gray-100 pt-2">
-                        <div class="w-5 h-5 rounded-full bg-purple-500 border border-white shadow flex items-center justify-center text-white text-[10px]">🎈</div>
-                        <div class="text-[11px] text-gray-700"><strong>영유아 관광지</strong></div>
-                    </div>
-                    <div class="flex items-center gap-2 mt-1">
-                        <div class="w-5 h-5 rounded-full bg-cyan-500 border border-white shadow flex items-center justify-center text-white text-[10px]">🌊</div>
-                        <div class="text-[11px] text-gray-700"><strong>해양 액티비티</strong></div>
-                    </div>
-                    <div class="flex items-center gap-2 mt-2 border-t border-gray-100 pt-2">
-                        <div class="w-6 h-0 border-t-[3px] border-dashed border-indigo-500"></div>
-                        <div class="text-xs text-gray-700"><strong>주요 이동 동선</strong><br><span class="text-[10px] text-gray-500">공항→숙소1→숙소2→관광</span></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // 1. Initialize Map with Strict Bounds to prevent World Map view
+        // 1. Initialize Map with Strict Bounds
         const boundsOkinawa = [
             [25.8, 127.0], // South West
             [27.0, 128.5]  // North East
@@ -146,11 +150,13 @@
 
         const map = L.map('map', { 
             zoomControl: false,
-            minZoom: 9, // 세계지도로 축소되는 것 방지
-            maxBounds: boundsOkinawa, // 오키나와 밖으로 드래그 방지
-            maxBoundsViscosity: 1.0
+            minZoom: 9,
+            maxBounds: boundsOkinawa,
+            maxBoundsViscosity: 1.0,
+            tap: false // Prevent ghost clicks on iOS Leaflet
         }).setView([26.4500, 127.8000], 10);
         
+        // Only add Zoom control if not on a small mobile screen (handled by CSS hiding as well)
         L.control.zoom({ position: 'bottomright' }).addTo(map);
         
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -167,7 +173,6 @@
 
         // 3. Attractions (30 places)
         const attractions = [
-            // Infant Attractions
             { name: '만좌모', lat: 26.5049, lng: 127.8502, color: 'marker-purple', icon: '🌅', price: '¥100', kids: '유모차 평지 산책', time: '30분', desc: '하얏트 숙소에서 가깝고 길이 평탄해 유모차 밀기에 최적화되어 있습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=万座毛' },
             { name: '부세나 해중공원 (전망탑)', lat: 26.5385, lng: 127.9405, color: 'marker-purple', icon: '🔭', price: '¥1,050', kids: '안고 내려가기(계단)', time: '40분', desc: '수심 5m 아래로 계단을 내려가 실제 바닷속을 창문으로 봅니다. 유모차는 불가하지만 아기 띠로 안고 갈만합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ブセナ海中展望塔' },
             { name: '비오스의 언덕', lat: 26.4180, lng: 127.8000, color: 'marker-purple', icon: '🚤', price: '¥1,800', kids: '정글 크루즈 보트', time: '2시간', desc: '안전한 크루즈 보트를 타고 식물과 동물을 구경합니다. 걷기 힘든 0~3세 아이들에게 최적입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ビオスの丘' },
@@ -183,8 +188,6 @@
             { name: '츄라우미 곁 바다거북 방생장', lat: 26.6960, lng: 127.8760, color: 'marker-purple', icon: '🐢', price: '무료', kids: '관람 용이', time: '30분', desc: '수족관 야외에 위치. 수면 위로 올라오는 큰 거북이를 아이들이 유모차에 탄 채로도 가까이서 볼 수 있습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=美ら海水族館+ウミガメ館' },
             { name: '오키나와 후르츠 랜드', lat: 26.6160, lng: 127.9940, color: 'marker-purple', icon: '🥭', price: '¥1,200', kids: '전 구역 실내/유모차', time: '1.5시간', desc: '파인애플 파크 바로 옆. 퀴즈를 풀며 새와 과일을 봅니다. 전체가 지붕으로 덮여있어 날씨 영향 없이 유모차 관람이 가능합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=沖縄フルーツらんど' },
             { name: '도구치 비치 공원', lat: 26.3653, lng: 127.7405, color: 'marker-purple', icon: '🏴‍☠️', price: '무료', kids: '해적선 대형 놀이터', time: '1시간', desc: '요미탄 남쪽의 평화로운 해변. 바다 바로 옆에 거대한 배 모양의 놀이터가 있어 3세 아이가 뛰놀기 가장 완벽합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=渡具知ビーチ' },
-            
-            // Adult Attractions (15 places)
             { name: '오키나와 월드', lat: 26.1397, lng: 127.7503, color: 'marker-purple', icon: '🦇', price: '¥2,000', kids: '습한 동굴 탐험/도보', time: '2시간', desc: '거대한 종유동굴(옥천동) 코스가 깁니다. 미끄럽고 체력 소모가 커서 아이보다는 성인 교대 관람이나 어른끼리 가기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=おきなわワールド', target: 'adult' },
             { name: '슈리성 공원', lat: 26.2170, lng: 127.7195, color: 'marker-purple', icon: '🏯', price: '¥400', kids: '계단 및 오르막길', time: '1.5시간', desc: '류큐 왕국의 궁전. 역사적 가치가 높으나 고지대에 있어 언덕과 계단이 많으므로 어르신이나 성인 코스로 추천합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=首里城公園', target: 'adult' },
             { name: '나키진 성터', lat: 26.6915, lng: 127.9280, color: 'marker-purple', icon: '⛰️', price: '¥400', kids: '가파른 성곽 트레킹', time: '1시간', desc: '북부의 장엄한 성곽. 탁 트인 바다 전망이 예술이지만, 길이 울퉁불퉁하고 가팔라 유모차 진입이 불가능합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=今帰仁城跡', target: 'adult' },
@@ -202,9 +205,8 @@
             { name: '잔파곶 등대 내부 전망대', lat: 26.4385, lng: 127.7145, color: 'marker-purple', icon: '🗼', price: '¥300', kids: '가파른 99계단 등반', time: '30분', desc: '잔파곶 공원은 평지지만, 등대 꼭대기까지 올라가는 좁고 가파른 99개의 계단은 성인들만 도전해 볼 수 있는 뷰포인트입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=残波岬灯台', target: 'adult' }
         ];
 
-        // 3-2. Marine Activities (30 places - Expanded & Links Verified)
+        // 3-2. Marine Activities (30 places)
         const marineActivities = [
-            // Infant & Family Marine Activities
             { name: '하얏트 세라가키 비치', lat: 26.5055, lng: 127.8760, color: 'marker-cyan', icon: '🏖️', price: '투숙객 전용', kids: '모래놀이/얕은물 O', time: '자유', desc: '하얏트 세라가키 내 프라이빗 비치. 파도가 막혀 있어 0~3세 아기들 첫 바다 수영과 모래놀이에 완벽합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=瀬良垣ビーチ' },
             { name: '에메랄드 비치', lat: 26.6975, lng: 127.8785, color: 'marker-cyan', icon: '⛱️', price: '무료', kids: '파도 없음/안전 최고', time: '1~2시간', desc: '츄라우미 수족관 바로 옆. 라군(석호) 형태로 파도가 거의 없어 1~3세 아이들이 튜브 타고 놀기 가장 안전한 해변 중 하나입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=エメラルドビーチ' },
             { name: '잔파 비치', lat: 26.4380, lng: 127.7170, color: 'marker-cyan', icon: '🏝️', price: '무료', kids: '고운 모래/안전망 O', time: '자유', desc: '호시노야 숙소에서 아주 가깝습니다. 모래가 부드럽고 해파리 방지 그물이 있어 아기들 발 담그고 놀기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=残波ビーチ' },
@@ -220,8 +222,6 @@
             { name: '선셋 비치 (아메리칸 빌리지)', lat: 26.3150, lng: 127.7560, color: 'marker-cyan', icon: '🌇', price: '무료', kids: '도심형 인공 해변', time: '1시간', desc: '파도가 전혀 없는 인공 해변이라 안전하며, 가볍게 발 담그고 물놀이 후 유모차 끌고 바로 식당가로 이동하기 완벽합니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=サンセットビーチ+北谷' },
             { name: '다이아몬드 비치', lat: 26.4955, lng: 127.8545, color: 'marker-cyan', icon: '💎', price: '무료', kids: '얕고 투명한 바다', time: '30분', desc: '오카시고텐 온나점 뒤에 위치. 사람은 적고 물이 매우 투명해 아이들과 예쁜 바다를 배경으로 사진 찍고 가볍게 물장구치기 좋습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ダイヤモンドビーチ+恩納村' },
             { name: '부세나 해중공원 (글라스보트)', lat: 26.5385, lng: 127.9400, color: 'marker-cyan', icon: '🐳', price: '¥1,560', kids: '무료 셔틀/배 탑승', time: '1시간', desc: '옷을 적시지 않고 바닷속을 보는 고래 모양 보트. 셔틀버스가 선착장 앞까지 가므로 유아 동반 시 체력 소모를 아낄 수 있습니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=ブセナ海中公園' },
-            
-            // Adult Marine Activities (15 places - Links Verified & Corrected)
             { name: '케라마 제도 스쿠버다이빙', lat: 26.2238, lng: 127.6828, color: 'marker-cyan', icon: '🤿', price: '¥15,000~', kids: '깊은바다/배멀미 주의', time: '반나절', desc: '세계적인 투명도의 케라마 블루에서 즐기는 심해 다이빙. 나하 토마린 항구에서 배를 타고 나가므로 성인들만의 완벽한 액티비티입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=泊ふ頭旅客ターミナルビル+(とまりん)', target: 'adult' },
             { name: '마에다곶 푸른동굴 다이빙', lat: 26.4440, lng: 127.7715, color: 'marker-cyan', icon: '🔦', price: '¥8,000~', kids: '수심 깊음/산소통 장비', time: '2시간', desc: '동굴 안으로 들어오는 신비로운 파란 빛을 보기 위해 산소통을 매고 깊숙이 잠수하는 성인 타겟의 스릴 넘치는 투어입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=真栄田岬', target: 'adult' },
             { name: '온나손 패러세일링', lat: 26.4390, lng: 127.8020, color: 'marker-cyan', icon: '🪂', price: '¥7,000~', kids: '고공 비행 스릴', time: '1.5시간', desc: '마에가네쿠 어항에서 모터보트를 타고 출발해 하늘 위 50m까지 올라가 온나손의 에메랄드 바다를 내려다보는 짜릿한 체험입니다.', gmaps: 'https://www.google.com/maps/search/?api=1&query=前兼久漁港', target: 'adult' },
@@ -299,14 +299,14 @@
             const colorName = isMarine ? 'cyan' : 'purple';
             const targetIcon = loc.target === 'adult' ? '🧑' : '👶';
             return `
-                <div class="bg-white w-64">
-                    <div class="bg-${colorName}-500 text-white p-3 font-bold text-base flex items-center gap-2"><span>${loc.icon}</span> ${loc.name}</div>
-                    <div class="p-4 space-y-2">
-                        <div class="flex gap-2 text-xs">
+                <div class="bg-white w-[240px] sm:w-64">
+                    <div class="bg-${colorName}-500 text-white p-2.5 sm:p-3 font-bold text-sm sm:text-base flex items-center gap-2"><span>${loc.icon}</span> ${loc.name}</div>
+                    <div class="p-3 sm:p-4 space-y-2">
+                        <div class="flex gap-2 text-[11px] sm:text-xs">
                             <span class="bg-${colorName}-100 text-${colorName}-700 px-2 py-1 rounded font-bold">${targetIcon} ${loc.kids}</span>
                             <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">⏱️ ${loc.time}</span>
                         </div>
-                        <p class="text-sm text-gray-700 leading-relaxed pt-1">${loc.desc}</p>
+                        <p class="text-[13px] sm:text-sm text-gray-700 leading-relaxed pt-1">${loc.desc}</p>
                         <a href="${loc.gmaps}" target="_blank" class="block w-full text-center bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold py-2 rounded mt-2 border border-blue-200">🗺️ 구글 맵 열기</a>
                     </div>
                 </div>`;
@@ -327,9 +327,9 @@
         // Add Restaurants
         restaurants.forEach(rest => {
             const popup = `
-                <div class="bg-white w-56">
-                    <div class="bg-amber-500 text-white p-2 font-bold text-md flex items-center gap-2"><span>${rest.icon}</span> ${rest.name}</div>
-                    <div class="p-3 text-sm space-y-1">
+                <div class="bg-white w-[220px] sm:w-56">
+                    <div class="bg-amber-500 text-white p-2.5 font-bold text-sm sm:text-md flex items-center gap-2"><span>${rest.icon}</span> ${rest.name}</div>
+                    <div class="p-3 text-[13px] sm:text-sm space-y-1.5">
                         <p><strong>🕒 추천:</strong> ${rest.meal}</p>
                         <p><strong>💴 예산:</strong> ${rest.price}</p>
                         <p class="text-blue-600"><strong>👶 유아:</strong> ${rest.kids}</p>
@@ -365,6 +365,7 @@
         const tabMarine = document.getElementById('tab-marine');
         const tabRest = document.getElementById('tab-rest');
         const listContainer = document.getElementById('list-container');
+        const mainPanel = document.getElementById('ui-restaurant-list');
 
         const renderList = (type) => {
             listContainer.innerHTML = '';
@@ -382,13 +383,13 @@
                 if (type === 'tour' || type === 'marine') {
                     const targetIcon = item.target === 'adult' ? '🧑' : '💡';
                     el.innerHTML = `
-                        <div class="font-bold text-gray-800 text-sm flex items-center justify-between mb-1">
+                        <div class="font-bold text-gray-800 text-sm flex items-center justify-between mb-1.5">
                             <span><span class="mr-1">${item.icon}</span>${item.name}</span>
                         </div>
-                        <div class="text-xs text-${colorName}-600 font-bold mb-1 flex justify-between">
+                        <div class="text-[11px] sm:text-xs text-${colorName}-600 font-bold mb-1.5 flex justify-between">
                             <span>${targetIcon} ${item.kids}</span>
                         </div>
-                        <div class="text-[11px] text-gray-500 line-clamp-2">${item.desc.replace(/<\/?b>/g, '')}</div>
+                        <div class="text-[11px] sm:text-[11px] text-gray-500 line-clamp-2 leading-relaxed">${item.desc.replace(/<\/?b>/g, '')}</div>
                     `;
                 } else {
                     el.innerHTML = `
@@ -396,7 +397,7 @@
                             <span class="truncate pr-2"><span class="mr-1">${item.icon}</span>${item.name}</span>
                             <span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium shrink-0">${item.meal.split(' ')[0]}</span>
                         </div>
-                        <div class="text-xs text-gray-500 mt-1.5 flex items-center justify-between">
+                        <div class="text-[11px] sm:text-xs text-gray-500 mt-1.5 flex items-center justify-between">
                             <div class="flex items-center gap-2 truncate">
                                 <span>${item.price}</span>
                                 <span class="text-gray-300">|</span>
@@ -407,8 +408,14 @@
                 }
 
                 el.addEventListener('click', () => {
+                    // Fly to location
                     map.flyTo([item.lat, item.lng], 14, { duration: 1.2 });
                     setTimeout(() => item.marker.openPopup(), 1200);
+                    
+                    // Auto-collapse Bottom Sheet on Mobile
+                    if (window.innerWidth < 640) {
+                        mainPanel.classList.add('translate-y-[calc(100%-64px)]');
+                    }
                 });
                 
                 listContainer.appendChild(el);
@@ -417,26 +424,26 @@
 
         // Tab Events
         const resetTabs = () => {
-            tabTour.className = "flex-1 py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors";
-            tabMarine.className = "flex-1 py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors border-l border-r border-gray-200";
-            tabRest.className = "flex-1 py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors";
+            tabTour.className = "flex-1 py-3 sm:py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors";
+            tabMarine.className = "flex-1 py-3 sm:py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors border-l border-r border-gray-200";
+            tabRest.className = "flex-1 py-3 sm:py-2.5 font-bold tab-inactive hover:bg-gray-100 transition-colors";
         };
 
         tabTour.addEventListener('click', () => {
             resetTabs();
-            tabTour.className = "flex-1 py-2.5 font-bold tab-active-tour transition-colors";
+            tabTour.className = "flex-1 py-3 sm:py-2.5 font-bold tab-active-tour transition-colors";
             renderList('tour');
         });
 
         tabMarine.addEventListener('click', () => {
             resetTabs();
-            tabMarine.className = "flex-1 py-2.5 font-bold tab-active-marine transition-colors border-l border-r border-gray-200";
+            tabMarine.className = "flex-1 py-3 sm:py-2.5 font-bold tab-active-marine transition-colors border-l border-r border-gray-200";
             renderList('marine');
         });
 
         tabRest.addEventListener('click', () => {
             resetTabs();
-            tabRest.className = "flex-1 py-2.5 font-bold tab-active-rest transition-colors";
+            tabRest.className = "flex-1 py-3 sm:py-2.5 font-bold tab-active-rest transition-colors";
             renderList('rest');
         });
 
@@ -449,11 +456,15 @@
         const panelChevron = document.getElementById('panel-chevron');
 
         panelHeader.addEventListener('click', () => {
-            panelContent.classList.toggle('hidden');
-            panelChevron.classList.toggle('rotate-180');
-            panelHeader.classList.toggle('rounded-t-2xl');
-            panelHeader.classList.toggle('rounded-2xl');
-            panelHeader.classList.toggle('border-b');
+            if (window.innerWidth < 640) {
+                // Mobile: Slide down (Bottom Sheet)
+                mainPanel.classList.toggle('translate-y-[calc(100%-64px)]');
+            } else {
+                // Desktop: Hide content
+                panelContent.classList.toggle('hidden');
+                panelChevron.classList.toggle('rotate-180');
+                panelHeader.classList.toggle('border-b');
+            }
         });
 
         const legendHeader = document.getElementById('legend-header');
@@ -463,8 +474,13 @@
         legendHeader.addEventListener('click', () => {
             legendContent.classList.toggle('hidden');
             legendChevron.classList.toggle('rotate-180');
-            legendHeader.classList.toggle('rounded-2xl');
-            legendHeader.classList.toggle('rounded-t-2xl');
+        });
+
+        // Window resize handler to reset mobile bottom sheet state
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 640) {
+                mainPanel.classList.remove('translate-y-[calc(100%-64px)]');
+            }
         });
 
         // 지연 렌더링 후 화면 꽉 채우기 및 포커스 고정 (세계지도 방지)
